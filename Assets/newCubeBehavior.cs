@@ -2,7 +2,6 @@
 using System.Collections;
 
 public class newCubeBehavior : cubeBehavior {
-    public int howManyColorsCanBe = 5;
     public int randomNumber;
 
     public int ChooseRandomNumber()
@@ -34,7 +33,6 @@ public class newCubeBehavior : cubeBehavior {
         {
             whatColor = "magenta";
         }
-        //actually color self
         base.ColorSelf();
     }
 

@@ -3,6 +3,7 @@ using System.Collections;
 
 public class cubeBehavior : MonoBehaviour {
     public int x, y;
+    public int howManyColorsCanBe = 5;
     public string whatColor = "white";
     public Material white;
     public Material black;
@@ -11,40 +12,43 @@ public class cubeBehavior : MonoBehaviour {
     public Material red;
     public Material magenta;
     public Material green;
-    public bool hasBeenClicked = false;
-    public bool isNotDead = true;
+    public bool isActive = false;
     gameCode aGameController;
+    public MeshRenderer meshRend;
+
+    public bool redTouch, blueTouch, greenTouch, magentaTouch, yellowTouch;
+    public int howManySameColorTouchingMe;
 
     //sets self color
     public void ColorSelf()
     {
         if (whatColor == "white")
         {
-            GetComponent<Renderer>().material = white;
+            meshRend.material = white;
         }
-        if (whatColor == "black")
+        else if (whatColor == "black")
         {
-            GetComponent<Renderer>().material = black;
+            meshRend.material = black;
         }
-        if (whatColor == "blue")
+        else if (whatColor == "blue")
         {
-            GetComponent<Renderer>().material = blue;
+            meshRend.material = blue;
         }
-        if (whatColor == "yellow")
+        else if (whatColor == "yellow")
         {
-            GetComponent<Renderer>().material = yellow;
+            meshRend.material = yellow;
         }
-        if (whatColor == "red")
+        else if (whatColor == "red")
         {
-            GetComponent<Renderer>().material = red;
+            meshRend.material = red;
         }
-        if (whatColor == "magenta")
+        else if (whatColor == "magenta")
         {
-            GetComponent<Renderer>().material = magenta;
+            meshRend.material = magenta;
         }
-        if (whatColor == "green")
+        else if (whatColor == "green")
         {
-            GetComponent<Renderer>().material = green;
+            meshRend.material = green;
         }
     }
 

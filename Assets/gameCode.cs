@@ -5,33 +5,225 @@ using System.Collections.Generic;
 public class gameCode : MonoBehaviour {
     public GameObject baseCube;
     public GameObject newCube;
+	public Material clickedColor;
     public int newCubeX = 7;
     public int newCubeY = 0;
     //^^ the X & Y coordinates of the newCube
     public int chosenRow;
     public int randomCol;
-    public int toBeBlackRow;
-    public int toBeBlackCol;
-    //^^ these are randomly generated x&y coordinates to turn an available cube black
+    public int randomRow;
     public bool thereIsAnActiveCube = false;
     //tracks if there is an active cube
-    public int formerlyClickedCubeX;
-    public int formerlyClickedCubeY;
-    public string formerlyClickedCube;
-    //holds the x&y & color values of the most recent clicked cube
+    public bool foundACube = false;
+    public int activeCubeX;
+    public int activeCubeY;
+    public string activeCube;
+    //holds the x&y & color values of the most active cube
     public GameObject[,] availablePos;
     public int randomPositionInList;
     public bool isThereAnOpenCol = true;
     public int numColsofCubes = 8;
     public int numRowsofCubes = 5;
+    public int maxAvailableCubes;
+    public int occupiedCubes = 0;
     public GameObject [,] cubeGrid;
     public float gameLength = 60f;
     //^^ how long should the game last (currently 60 secs)
+    public bool gameOn = true;
     public float newCubeColorFreq = 2f;
     //^^ how often should the newCube get a color (currently 2 secs)
     public float turnStart = 1f;
     //^^ when should the next turn start (initially set to 1 sec after game starts)
+    public int sameColorCrossPoints = 10;
+    //^^ how many points a same-color cross is worth
+    public int rainbowCrossPoints = 5;
+    //^^ how many points a rainbow cross is worth
+    public int playerPoints = 0;
+    //^^ how many points the player currently has
+    public int rainbowsToAward = 0;
+    public int sameColorsToAward = 0;
+    public int pointsToAward = 0;
 
+    //figure out what the center cube's bool 
+    public void WhatCenterBool(GameObject centerCube)
+    {
+        if (centerCube.GetComponent<cubeBehavior>().whatColor == "red")
+        {
+            centerCube.GetComponent<cubeBehavior>().redTouch = true;
+        }
+        else if (centerCube.GetComponent<cubeBehavior>().whatColor == "blue")
+        {
+            centerCube.GetComponent<cubeBehavior>().blueTouch = true;
+        }
+        else if (centerCube.GetComponent<cubeBehavior>().whatColor == "yellow")
+        {
+            centerCube.GetComponent<cubeBehavior>().yellowTouch = true; 
+        }
+        else if (centerCube.GetComponent<cubeBehavior>().whatColor == "magenta")
+        {
+            centerCube.GetComponent<cubeBehavior>().magentaTouch = true;
+        }
+        else if (centerCube.GetComponent<cubeBehavior>().whatColor == "green")
+        {
+            centerCube.GetComponent<cubeBehavior>().greenTouch = true;
+        }
+    }
+
+    //figure out what the other colorTouch bools are, around the centerCube
+    public void WhatColorTouchBools(GameObject centerCube, GameObject cubeToCheck)
+    {
+        if (cubeToCheck.GetComponent<cubeBehavior>().whatColor == "red")
+        {
+            centerCube.GetComponent<cubeBehavior>().redTouch = true;
+        }
+        else if (cubeToCheck.GetComponent<cubeBehavior>().whatColor == "blue")
+        {
+            centerCube.GetComponent<cubeBehavior>().blueTouch = true;
+        }
+        else if (cubeToCheck.GetComponent<cubeBehavior>().whatColor == "yellow")
+        {
+            centerCube.GetComponent<cubeBehavior>().yellowTouch = true;
+        }
+        else if (cubeToCheck.GetComponent<cubeBehavior>().whatColor == "magenta")
+        {
+            centerCube.GetComponent<cubeBehavior>().magentaTouch = true;
+        }
+        else if (cubeToCheck.GetComponent<cubeBehavior>().whatColor == "green")
+        {
+            centerCube.GetComponent<cubeBehavior>().greenTouch = true;
+        }
+    }
+
+
+    //checks cubeGrid for rainbowCrosses
+    public void RainbowCrossChecker()
+    {
+        //don't bother checking the outer rim because they can't be the center of a cross
+        for (int rowToCheck = 1; rowToCheck < numRowsofCubes - 1; rowToCheck++)
+        {
+            for (int colToCheck = 1; colToCheck < numColsofCubes - 1; colToCheck++)
+            {
+                //only run if the cube is not white/black
+                if (cubeGrid[colToCheck, rowToCheck].GetComponent<cubeBehavior>().whatColor != "white" || cubeGrid[colToCheck, rowToCheck].GetComponent<cubeBehavior>().whatColor != "black")
+                {
+                    //only run if the surrounding cubs are not white/black
+                    if (cubeGrid[colToCheck + 1, rowToCheck].GetComponent<cubeBehavior>().whatColor != "white" || cubeGrid[colToCheck + 1, rowToCheck].GetComponent<cubeBehavior>().whatColor != "black" ||
+                        cubeGrid[colToCheck - 1, rowToCheck].GetComponent<cubeBehavior>().whatColor != "white" || cubeGrid[colToCheck - 1, rowToCheck].GetComponent<cubeBehavior>().whatColor != "black" ||
+                        cubeGrid[colToCheck, rowToCheck + 1].GetComponent<cubeBehavior>().whatColor != "white" || cubeGrid[colToCheck, rowToCheck + 1].GetComponent<cubeBehavior>().whatColor != "black" ||
+                        cubeGrid[colToCheck, rowToCheck - 1].GetComponent<cubeBehavior>().whatColor != "white" || cubeGrid[colToCheck, rowToCheck - 1].GetComponent<cubeBehavior>().whatColor != "black")
+                    {
+                        WhatCenterBool(cubeGrid[colToCheck, rowToCheck]);
+                        //for the cube to the right
+                        WhatColorTouchBools(cubeGrid[colToCheck, rowToCheck], cubeGrid[colToCheck + 1, rowToCheck]);
+                        //the cube to the left
+                        WhatColorTouchBools(cubeGrid[colToCheck, rowToCheck], cubeGrid[colToCheck - 1, rowToCheck]);
+                        //the cube above
+                        WhatColorTouchBools(cubeGrid[colToCheck, rowToCheck], cubeGrid[colToCheck, rowToCheck + 1]);
+                        //the cube below
+                        WhatColorTouchBools(cubeGrid[colToCheck, rowToCheck], cubeGrid[colToCheck, rowToCheck - 1]);
+
+                        //now check to see if all five bools are true; if they are, then there is a rainbow cross. 
+                        if (cubeGrid[colToCheck, rowToCheck].GetComponent<cubeBehavior>().redTouch && cubeGrid[colToCheck, rowToCheck].GetComponent<cubeBehavior>().blueTouch &&
+                            cubeGrid[colToCheck, rowToCheck].GetComponent<cubeBehavior>().greenTouch && cubeGrid[colToCheck, rowToCheck].GetComponent<cubeBehavior>().magentaTouch &&
+                            cubeGrid[colToCheck, rowToCheck].GetComponent<cubeBehavior>().yellowTouch)
+                        {
+                            //award points
+                            rainbowsToAward++;
+                            //the cross should also turn black
+                            cubeGrid[colToCheck, rowToCheck].GetComponent<cubeBehavior>().whatColor = "black";
+                            cubeGrid[colToCheck + 1, rowToCheck].GetComponent<cubeBehavior>().whatColor = "black";
+                            cubeGrid[colToCheck - 1, rowToCheck].GetComponent<cubeBehavior>().whatColor = "black";
+                            cubeGrid[colToCheck, rowToCheck + 1].GetComponent<cubeBehavior>().whatColor = "black";
+                            cubeGrid[colToCheck, rowToCheck - 1].GetComponent<cubeBehavior>().whatColor = "black";
+                            //and then reset them all to false because they are now not true
+                            cubeGrid[colToCheck, rowToCheck].GetComponent<cubeBehavior>().yellowTouch = false;
+                            cubeGrid[colToCheck, rowToCheck].GetComponent<cubeBehavior>().redTouch = false;
+                            cubeGrid[colToCheck, rowToCheck].GetComponent<cubeBehavior>().blueTouch = false;
+                            cubeGrid[colToCheck, rowToCheck].GetComponent<cubeBehavior>().magentaTouch = false;
+                            cubeGrid[colToCheck, rowToCheck].GetComponent<cubeBehavior>().greenTouch = false;
+                        }
+                    }
+                }
+            }
+        }
+        if (rainbowsToAward > 0)
+        {
+            AwardPoints();
+        }
+    }
+
+    public bool ColorChecker(int centerCubeX, int centerCubeY, string cubeColor)
+    {
+        if (cubeGrid[centerCubeX + 1,centerCubeY].GetComponent<cubeBehavior>().whatColor == cubeColor &&
+            cubeGrid[centerCubeX - 1, centerCubeY].GetComponent<cubeBehavior>().whatColor == cubeColor &&
+            cubeGrid[centerCubeX, centerCubeY + 1].GetComponent<cubeBehavior>().whatColor == cubeColor &&
+            cubeGrid[centerCubeX, centerCubeY - 1].GetComponent<cubeBehavior>().whatColor == cubeColor)
+        {
+            return true;
+        }
+        else 
+        {
+            return false;
+        }
+    }
+
+    //checks cubeGrid for sameColorCrosses
+    /*public void SameColorCrossChecker()
+    {
+        //don't bother checking the outer rim because they can't be the center of a cross
+        for (int rowToCheck = 1; rowToCheck < numRowsofCubes - 1; rowToCheck++)
+        {
+            for (int colToCheck = 1; colToCheck < numColsofCubes - 1; colToCheck++)
+            {
+                //only run if the cube is not white/black
+                if (cubeGrid[colToCheck, rowToCheck].GetComponent<cubeBehavior>().whatColor != "white" || cubeGrid[colToCheck, rowToCheck].GetComponent<cubeBehavior>().whatColor != "black")
+                {
+                    //only run if the surrounding cubs are also not white/black
+                    if (cubeGrid[colToCheck + 1, rowToCheck].GetComponent<cubeBehavior>().whatColor != "white" || cubeGrid[colToCheck + 1, rowToCheck].GetComponent<cubeBehavior>().whatColor != "black" ||
+                        cubeGrid[colToCheck - 1, rowToCheck].GetComponent<cubeBehavior>().whatColor != "white" || cubeGrid[colToCheck - 1, rowToCheck].GetComponent<cubeBehavior>().whatColor != "black" ||
+                        cubeGrid[colToCheck, rowToCheck + 1].GetComponent<cubeBehavior>().whatColor != "white" || cubeGrid[colToCheck, rowToCheck + 1].GetComponent<cubeBehavior>().whatColor != "black" ||
+                        cubeGrid[colToCheck, rowToCheck - 1].GetComponent<cubeBehavior>().whatColor != "white" || cubeGrid[colToCheck, rowToCheck - 1].GetComponent<cubeBehavior>().whatColor != "black")
+                    {
+                        if (ColorChecker (colToCheck, rowToCheck, cubeGrid[colToCheck, rowToCheck].GetComponent<cubeBehavior>().whatColor) == true)
+                        {
+                            //award points
+                            sameColorsToAward++;
+                            //the cross should also turn black
+                            cubeGrid[colToCheck, rowToCheck].GetComponent<cubeBehavior>().whatColor = "black";
+                            cubeGrid[colToCheck + 1, rowToCheck].GetComponent<cubeBehavior>().whatColor = "black";
+                            cubeGrid[colToCheck - 1, rowToCheck].GetComponent<cubeBehavior>().whatColor = "black";
+                            cubeGrid[colToCheck, rowToCheck + 1].GetComponent<cubeBehavior>().whatColor = "black";
+                            cubeGrid[colToCheck, rowToCheck - 1].GetComponent<cubeBehavior>().whatColor = "black";
+                        }
+                    }
+                }
+            }
+        }
+        if (sameColorsToAward > 0)
+        {
+            AwardPoints();
+        }
+    }*/
+
+    public void AwardPoints()
+    {
+        if (rainbowsToAward > 0)
+        {
+            //calculate how many points player has earned
+            pointsToAward = rainbowsToAward * rainbowCrossPoints;
+            playerPoints += pointsToAward;
+            //reset rainbowsToAward
+            rainbowsToAward = 0;
+        }
+        if (sameColorsToAward > 0)
+        {
+            pointsToAward = sameColorsToAward * sameColorCrossPoints;
+            playerPoints += pointsToAward;
+            sameColorsToAward = 0;
+        }
+        //update score
+        print(playerPoints);
+    }
     public bool WasAProperKeyPressed()
     {
         if (Input.GetKeyDown("1") || Input.GetKeyDown("2") || Input.GetKeyDown("3") || Input.GetKeyDown("4") || Input.GetKeyDown("5"))
@@ -52,9 +244,22 @@ public class gameCode : MonoBehaviour {
             for (int CubesInRow = 0; CubesInRow < numColsofCubes; CubesInRow++)
             {
                 cubeGrid[CubesInRow, rowOfCubes].GetComponent<cubeBehavior>().ColorSelf();
+				if (cubeGrid[CubesInRow, rowOfCubes].GetComponent<cubeBehavior>().isActive == true) 
+				{
+					cubeGrid[CubesInRow, rowOfCubes].GetComponent<cubeBehavior>().meshRend.material = clickedColor;
+				}
             }
         }
-        newCube.GetComponent<newCubeBehavior>().BeAColor();
+        if (newCube.GetComponent<newCubeBehavior>().whatColor == "white")
+        {
+            //newCube should never actually be white and should be invisible
+            newCube.GetComponent<Renderer>().enabled = false;
+        }
+        else
+        {
+            newCube.GetComponent<Renderer>().enabled = true;
+            newCube.GetComponent<newCubeBehavior>().BeAColor();
+        }
     }
 
     //method that determines when it is time for the newCube to be colored
@@ -109,6 +314,31 @@ public class gameCode : MonoBehaviour {
 
     }
 
+    //looks for all rows that currently have an empty position
+    public void ChooseARandomRow()
+    {
+        List<int> availableRows = new List<int>();
+        for (int rowOfCubes = 0; rowOfCubes < numRowsofCubes; rowOfCubes++)
+        {
+            foundACube = false;
+            if (foundACube == false)
+            {
+                for (int cubesInRow = 0; cubesInRow < numColsofCubes; cubesInRow++)
+                {
+                    if (cubeGrid[cubesInRow, chosenRow].GetComponent<cubeBehavior>().whatColor == "white")
+                    {
+                        //only rows that have available cubes should be added to the list
+                        availableRows.Add(rowOfCubes);
+                        foundACube = true;
+                    }
+
+                }
+            }
+        }
+        randomPositionInList = Random.Range(0, availableRows.Count);
+        randomRow = availableRows[randomPositionInList];
+    }
+
     public void PlayerChoseARow()
     {
         if (Input.GetKeyDown("1"))
@@ -138,108 +368,121 @@ public class gameCode : MonoBehaviour {
         }
     }
 
+    //keeps track of whether or not there is available cubes
+    public bool isThereRoomIncubeGrid()
+    {
+        maxAvailableCubes = numColsofCubes * numRowsofCubes;
+        if (occupiedCubes < maxAvailableCubes)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     public void PlaceThenewCube()
     {
         PlayerChoseARow();
         ChooseARandomColumn();
         if (isThereAnOpenCol == true)
         {
-            cubeGrid[randomCol, chosenRow].GetComponent<cubeBehavior>().whatColor = newCube.GetComponent<newCubeBehavior>().whatColor;
             //set the cube in the grid as the same color as the newCube
-            newCube.GetComponent<newCubeBehavior>().whatColor = "white";
+            cubeGrid[randomCol, chosenRow].GetComponent<cubeBehavior>().whatColor = newCube.GetComponent<newCubeBehavior>().whatColor;
             //reset the newCube
-            ColorTheCubes();
+            newCube.GetComponent<newCubeBehavior>().whatColor = "white";
             //color the cubes again
+            cubeGrid[randomCol, chosenRow].GetComponent<cubeBehavior>().ColorSelf();
+            //reset that variable so it works again
+            isThereAnOpenCol = false;
+            //add to the occupiedCubes list
+            occupiedCubes++;
+        }
+        //if player attempts to place a cube in a full row, then game over
+        else
+        {
+            gameOn = false;
         }
     }
 
-    //Not yet fully implemented; will turn a random cube in cubeGrid black
+    //Turn a random cube in cubeGrid black
     public void TurnACubeBlack()
     {
-        for (int cubeInRow = 0; cubeInRow < numColsofCubes; cubeInRow++)
+        //if there is not any room to place a black cube, then game over
+        if (isThereRoomIncubeGrid() == false)
         {
-            for (int rowOfCubes = 0; rowOfCubes < numRowsofCubes; rowOfCubes++)
-            {
-                if (cubeGrid[cubeInRow, rowOfCubes].GetComponent<cubeBehavior>().whatColor == "white")
-                {
-                    
-
-                }
-            }
+            gameOn = false;
         }
+        else
+        {
+            ChooseARandomRow();
+            chosenRow = randomRow;
+            ChooseARandomColumn();
+            cubeGrid[randomCol, randomRow].GetComponent<cubeBehavior>().whatColor = "black";
+            //add to the occupiedCube count
+            occupiedCubes++;
+        }
+        //destroy the newCube
+        newCube.GetComponent<newCubeBehavior>().whatColor = "white";
     }
 
     public void PlayerClickedCubeGrid(GameObject clickedCube)
     {
-        if (clickedCube.GetComponent<cubeBehavior>().hasBeenClicked == true)
-        {
+		//self note: white cubes CANNOT become active
+		if (clickedCube.GetComponent<cubeBehavior>().isActive == true)
+		{
             //player has clicked on an already-active cube, so it should deactivate
-            clickedCube.GetComponent<cubeBehavior>().hasBeenClicked = false;
+            clickedCube.GetComponent<cubeBehavior>().isActive = false;
+			clickedCube.GetComponent<cubeBehavior>().ColorSelf();
+			thereIsAnActiveCube = false;
         }
-        else if (clickedCube.GetComponent<cubeBehavior>().hasBeenClicked == false && thereIsAnActiveCube == true)
+		else if (clickedCube.GetComponent<cubeBehavior>().whatColor != "white" && clickedCube.GetComponent<cubeBehavior>().whatColor != "black")
+		{
+			//Player clicked on a non-white & non-black cube
+			//so this cube should activate & color itself
+			clickedCube.GetComponent<cubeBehavior>().isActive = true;
+            clickedCube.GetComponent<cubeBehavior>().meshRend.material = clickedColor;
+            //the previously active cube (if there is one) should deactivate
+            cubeGrid[activeCubeX, activeCubeY].GetComponent<cubeBehavior>().isActive = false;
+            cubeGrid[activeCubeX, activeCubeY].GetComponent<cubeBehavior>().ColorSelf();
+            //information about the newly active cube is taken
+            activeCubeX = clickedCube.GetComponent<cubeBehavior>().x;
+			activeCubeY = clickedCube.GetComponent<cubeBehavior>().y;
+			activeCube = clickedCube.GetComponent<cubeBehavior>().whatColor;
+			thereIsAnActiveCube = true;
+		}
+		else if (thereIsAnActiveCube == true && clickedCube.GetComponent<cubeBehavior>().whatColor == "white")
         {
-            //player has clicked on an inactive cube while there is an active cube
-            //clickedCube becomes active
-            clickedCube.GetComponent<cubeBehavior>().hasBeenClicked = true;
+			//player clicked an inactive cube with an active cube
             //if the clicked cube is white AND touching the active cube, then they swap places
-            if (clickedCube.GetComponent<cubeBehavior>().whatColor == "white")
+            //diagonals are allowed
+            if (clickedCube.GetComponent<cubeBehavior>().x + 1 == activeCubeX && clickedCube.GetComponent<cubeBehavior>().y == activeCubeY ||
+			    clickedCube.GetComponent<cubeBehavior>().x - 1 == activeCubeX && clickedCube.GetComponent<cubeBehavior>().y == activeCubeY ||
+			    clickedCube.GetComponent<cubeBehavior>().y + 1 == activeCubeY && clickedCube.GetComponent<cubeBehavior>().x == activeCubeX ||
+			    clickedCube.GetComponent<cubeBehavior>().y - 1 == activeCubeY && clickedCube.GetComponent<cubeBehavior>().x == activeCubeX ||
+                clickedCube.GetComponent<cubeBehavior>().x + 1 == activeCubeX && clickedCube.GetComponent<cubeBehavior>().y + 1 == activeCubeY ||
+                clickedCube.GetComponent<cubeBehavior>().x - 1 == activeCubeX && clickedCube.GetComponent<cubeBehavior>().y - 1 == activeCubeY ||
+                clickedCube.GetComponent<cubeBehavior>().x - 1 == activeCubeX && clickedCube.GetComponent<cubeBehavior>().y + 1 == activeCubeY ||
+                clickedCube.GetComponent<cubeBehavior>().x + 1 == activeCubeX && clickedCube.GetComponent<cubeBehavior>().y - 1 == activeCubeY)
             {
-                if (clickedCube.GetComponent<cubeBehavior>().x + 1 == formerlyClickedCubeX && clickedCube.GetComponent<cubeBehavior>().y == formerlyClickedCubeY)
-                {
-                    //if clicked cube is directly to the right of the active cube
-                    //the active cube "moves" to the clicked cube (the color moves over)
-                    clickedCube.GetComponent<cubeBehavior>().whatColor = formerlyClickedCube;
-                    //the formerly active cube should become white
-                    cubeGrid[formerlyClickedCubeX, formerlyClickedCubeY].GetComponent<cubeBehavior>().whatColor = "white";
-                }
-                if (clickedCube.GetComponent<cubeBehavior>().x - 1 == formerlyClickedCubeX && clickedCube.GetComponent<cubeBehavior>().y == formerlyClickedCubeY)
-                {
-                    //if clicked cube is directly to the left of the active cube
-                    //the active cube "moves" to the clicked cube (the color moves over)
-                    clickedCube.GetComponent<cubeBehavior>().whatColor = formerlyClickedCube;
-                    //the formerly active cube should become white
-                    cubeGrid[formerlyClickedCubeX, formerlyClickedCubeY].GetComponent<cubeBehavior>().whatColor = "white";
-                }
-                if (clickedCube.GetComponent<cubeBehavior>().y + 1 == formerlyClickedCubeY && clickedCube.GetComponent<cubeBehavior>().x == formerlyClickedCubeX)
-                {
-                    //if clicked cube is directly above active cube
-                    //the active cube "moves" to the clicked cube (the color moves over)
-                    clickedCube.GetComponent<cubeBehavior>().whatColor = formerlyClickedCube;
-                    //the formerly active cube should become white
-                    cubeGrid[formerlyClickedCubeX, formerlyClickedCubeY].GetComponent<cubeBehavior>().whatColor = "white";
-                }
-                if (clickedCube.GetComponent<cubeBehavior>().y - 1 == formerlyClickedCubeY && clickedCube.GetComponent<cubeBehavior>().x == formerlyClickedCubeX)
-                {
-                    //if clicked cube is directly below active cube
-                    //the active cube "moves" to the clicked cube (the color moves over)
-                    clickedCube.GetComponent<cubeBehavior>().whatColor = formerlyClickedCube;
-                    //the formerly active cube should become white
-                    cubeGrid[formerlyClickedCubeX, formerlyClickedCubeY].GetComponent<cubeBehavior>().whatColor = "white";
-                }
-            }
-            //if the clickedCube isn't white, then active cube just teleports over (unless its black, in which case nothing happens)
-            else if (clickedCube.GetComponent<cubeBehavior>().whatColor == "red" || clickedCube.GetComponent<cubeBehavior>().whatColor == "blue" || clickedCube.GetComponent<cubeBehavior>().whatColor == "green" || clickedCube.GetComponent<cubeBehavior>().whatColor == "magenta" || clickedCube.GetComponent<cubeBehavior>().whatColor == "yellow")
-            {
-            //player clicked on a colored (not black) cube with an active cube
-            //active cube should deactivate
-            cubeGrid[formerlyClickedCubeX, formerlyClickedCubeY].GetComponent<cubeBehavior>().hasBeenClicked = false;
-            //clicked cube activates
-            clickedCube.GetComponent<cubeBehavior>().hasBeenClicked = true;
+                //the active cube "moves" to the clicked cube (the color moves over) and STAYS active
+                clickedCube.GetComponent<cubeBehavior>().whatColor = activeCube;
+			    clickedCube.GetComponent<cubeBehavior>().isActive = true;
+                clickedCube.GetComponent<cubeBehavior>().meshRend.material = clickedColor;
+                //the formerly active cube should become white and deactivates
+                cubeGrid[activeCubeX, activeCubeY].GetComponent<cubeBehavior>().whatColor = "white";
+                cubeGrid[activeCubeX, activeCubeY].GetComponent<cubeBehavior>().ColorSelf();
+                cubeGrid[activeCubeX, activeCubeY].GetComponent<cubeBehavior>().isActive = false;
+                //the data about the new position is taken
+                activeCubeX = clickedCube.GetComponent<cubeBehavior>().x;
+                activeCubeY = clickedCube.GetComponent<cubeBehavior>().y;
+                activeCube = clickedCube.GetComponent<cubeBehavior>().whatColor;
             }
         }
-        else if (clickedCube.GetComponent<cubeBehavior>().hasBeenClicked == false && thereIsAnActiveCube == false)
-        {
-            //player clicked on an inactive cube but there is no other active cube
-            //so this cube should activate
-            clickedCube.GetComponent<cubeBehavior>().hasBeenClicked = true;
-            //but nothing else should happen
-            formerlyClickedCubeX = clickedCube.GetComponent<cubeBehavior>().x;
-            formerlyClickedCubeY = clickedCube.GetComponent<cubeBehavior>().y;
-            formerlyClickedCube = clickedCube.GetComponent<cubeBehavior>().whatColor;
-            thereIsAnActiveCube = true;
-        }
+        //nothing happens if the player clicks a white cube w/o an active cube
+        //nothing happens if the player clicks a white cube that isn't touching an active cube
         
-        ColorTheCubes();
     }
 
 	// Use this for initialization
@@ -267,25 +510,51 @@ public class gameCode : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update ()
-    {
-        ColorTheCubes();
-        if (TimeForNewCubeColor() == true)
+	{
+        if (Time.time > gameLength)
         {
-            if (NewCubeIsEmpty() == true)
+            gameOn = false;
+        }
+        if (gameOn == true)
+        {
+            if (TimeForNewCubeColor())
             {
-                newCube.GetComponent<newCubeBehavior>().ChooseARandomColor();
+                if (NewCubeIsEmpty())
+                {
+                    newCube.GetComponent<newCubeBehavior>().ChooseARandomColor();
+                }
+                else
+                {
+                    //player didn't place newCube in time, so they are penalyzed with a black cube
+                    TurnACubeBlack();
+                    //then newCube is destroyed
+                }
+                newCube.GetComponent<newCubeBehavior>().BeAColor();
+                RainbowCrossChecker();
+                //SameColorCrossChecker();
+                ColorTheCubes();
             }
-            else
+            if (WasAProperKeyPressed() == true)
             {
-                //TurnACubeBlack();
-                //a random white cube in the cubeGrid[] should turn black
-                // haven't figured out how yet though--> 2 dimensional list? 
-                print("game over");
+                PlaceThenewCube();
             }
         }
-        if (WasAProperKeyPressed() == true)
+        else
         {
-            PlaceThenewCube();
+            print("game over");
+            //game over state
+            //if player score is > 0, they win
+            if (playerPoints > 0)
+            {
+                print("you win!");
+                print(playerPoints);
+            }
+            //if player score == 0, they lose
+            else
+            {
+                print("you lose :(");
+                print(playerPoints);
+            }
         }
 	
 	}
