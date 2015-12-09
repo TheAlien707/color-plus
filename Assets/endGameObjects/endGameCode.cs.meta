@@ -1,0 +1,21 @@
+fileFormatVersion: 2
+guid: 5fce08f36b7417b46ae2655276af0b1a
+timeCreated: 1449655228
+licenseType: Free
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - totalSameColorsAwardedUI: {instanceID: 0}
+  - finalScoreUI: {instanceID: 0}
+  - totalPunishmentCubesUI: {instanceID: 0}
+  - totalRainbowCrossesAwardedUI: {instanceID: 0}
+  - totalBonusesAwardedUI: {instanceID: 0}
+  - loseWinUI: {instanceID: 0}
+  - playAgainUI: {instanceID: 0}
+  - gameOverUI: {instanceID: 0}
+  - startButton: {fileID: 145972, guid: 95e58d08a1df8ae4496e0ee850025ac3, type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

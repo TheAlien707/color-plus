@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 1fdcf412bad4c234c9dc17698407b9c1
+timeCreated: 1449652933
+licenseType: Free
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - mouseCommandsUI: {instanceID: 0}
+  - keyCommandsUI: {instanceID: 0}
+  - scoringUI: {instanceID: 0}
+  - buttonUI: {instanceID: 0}
+  - startButton: {fileID: 186968, guid: b8da7d66f63d8fe488bb213265572afe, type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
